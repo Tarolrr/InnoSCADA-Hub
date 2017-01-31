@@ -19,16 +19,13 @@ struct {
 	GPIO_PinState lastState;	//последнее состо€ние
 } typedef PinDescription;
 
-struct {
-	GPIO_PinState state;
-	uint16_t pinNumber;
-} typedef MessagePinStateChange;	//»спользуетс€ в очереди
+#pragma GCC diagnostic ignored "-Wunused-variable"
 
-static PinDescription SPICSPin = {GPIOA, GPIO_PIN_4, 0, 0};
-//static PinDescription SPICSPin = {GPIOB, GPIO_PIN_0, 0, 0};
-//static PinDescription LoRaTxRxPin = {GPIOC, GPIO_PIN_13, 0, 0};
-//static PinDescription LoRaRxEnPin = {GPIOC, GPIO_PIN_13, 0, 0};
-//static PinDescription LoRaTxEnPin = {GPIOA, GPIO_PIN_4, 0, 0};
+static PinDescription SPICSMyPin = {GPIOA, GPIO_PIN_4, 0, 0};
+static PinDescription SPICSPin = {GPIOB, GPIO_PIN_0, 0, 0};
+static PinDescription LoRaTxRxPin = {GPIOC, GPIO_PIN_13, 0, 0};
+static PinDescription LoRaRxEnPin = {GPIOC, GPIO_PIN_13, 0, 0};
+static PinDescription LoRaTxEnPin = {GPIOA, GPIO_PIN_4, 0, 0};
 
 #define GPIO_PIN_SET(pinDesc) {HAL_GPIO_WritePin((pinDesc)->port,(pinDesc)->pin,GPIO_PIN_SET); (pinDesc)->lastState = GPIO_PIN_SET; (pinDesc)->lastEvent = HAL_GetTick();}
 #define GPIO_PIN_RESET(pinDesc) {HAL_GPIO_WritePin((pinDesc)->port,(pinDesc)->pin,GPIO_PIN_RESET); (pinDesc)->lastState = GPIO_PIN_RESET; (pinDesc)->lastEvent = HAL_GetTick();}
