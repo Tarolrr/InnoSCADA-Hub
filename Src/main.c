@@ -11,16 +11,18 @@
 #include "main.h"
 #include "cmsis_os.h"
 
+#define MySTM
+
 SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim1;
-osTimerId hRxTimer;
+osThreadId hMainTask;
 SX1278Drv_LoRaConfiguration cfg;
 
 void SystemClock_Config(void);
 void Error_Handler(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
-static void RxTimerCallback(void const * argument);
+static void MainTaskFxn(void const * argument);
 
 int main(void){
 
@@ -30,26 +32,36 @@ int main(void){
 	MX_GPIO_Init();
 	MX_SPI1_Init();
 
-	osTimerDef(RxTimer, RxTimerCallback);
-	hRxTimer = osTimerCreate(osTimer(RxTimer), osTimerOnce, NULL);
-
 	cfg.bw = SX1278Drv_RegLoRaModemConfig1_BW_125;
 	cfg.cr = SX1278Drv_RegLoRaModemConfig1_CR_4_8;
 	cfg.crc = SX1278Drv_RegLoRaModemConfig2_PayloadCrc_ON;
-	cfg.frequency = 868e6;
 	cfg.hdrMode = SX1278Drv_RegLoRaModemConfig1_HdrMode_Explicit;
 	cfg.power = 17;
 	cfg.preambleLength = 20;//
 	cfg.sf = SX1278Drv_RegLoRaModemConfig2_SF_12;
 	cfg.spi = &hspi1;
-	cfg.spi_css_pin = &SPICSPin;
-	//cfg.rx_en = &LoRaRxEnPin;
-	//cfg.tx_en = &LoRaTxEnPin;
 	cfg.sleepInIdle = true;
+#ifdef MySTM
+	cfg.frequency = 434e6;
+	cfg.spi_css_pin = &SPICSMyPin;
+	cfg.tx_led = &LoRaTxRxPin;
+#else
+	cfg.frequency = 868e6;
+	cfg.spi_css_pin = &SPICSPin;
+	cfg.rx_en = &LoRaRxEnPin;
+	cfg.tx_en = &LoRaTxEnPin;
+#endif
+
+
+
+
+	uint16_t testAddress = TestAddress;
 
 	SX1278Drv_Init(&cfg);
-	//SX1278Drv_SetAdresses(0, (uint16_t *)AddrSensors, SensorCount);
-	//SX1278Drv_SetAdresses(SensorCount, (uint16_t *)AddrRelays, RelayCount);
+	SX1278Drv_SetAdresses(0, &testAddress, 1);
+
+	osThreadDef(MainTask, MainTaskFxn, osPriorityNormal, 0, 256);
+	hMainTask = osThreadCreate(osThread(MainTask), NULL);
 
 	osKernelStart();
 	return 0;
@@ -114,26 +126,29 @@ static void MX_GPIO_Init(void){
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	__HAL_RCC_GPIOD_CLK_ENABLE();
-
+/*
 	GPIO_InitTypeDef GPIO_InitStruct;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 
-	GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-	GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_11 | GPIO_PIN_1;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
 	GPIO_InitStruct.Pin = SPICSPin.pin;
-	HAL_GPIO_Init(SPICSPin.port, &GPIO_InitStruct);
+	HAL_GPIO_Init(SPICSPin.port, &GPIO_InitStruct);*/
 }
 
 void Error_Handler(void){
   while(1);
 }
 
-static void RxTimerCallback(void const * argument){}
+static void MainTaskFxn(void const * argument){
+	while(1){
+		LoRa_Message msg;
+		msg.address = TestAddress;
+		msg.payloadLength = TestDataCount;
+		memcpy(msg.payload, testData, TestDataCount);
+		SX1278Drv_SendMessage(&msg);
+		osDelay(TestPeriodS*1000);
+	}
+}
 
 void SX1278Drv_LoRaRxCallback(LoRa_Message *msg){}
 

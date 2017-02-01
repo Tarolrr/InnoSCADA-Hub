@@ -23,5 +23,10 @@ const uint64_t GUID[] = {
 const uint8_t NetworkID = 0x01;
 const uint16_t LoRaAddress = 0x0000;
 
+#define TestDataCount 5
+const uint8_t testData[TestDataCount] = {0x00, 0x01, 0x02, 0x03, 0x04};
+
+#define TestAddress 0x0001
+#define TestPeriodS 30
 
 #endif /* MAIN_H_ */
